@@ -1,0 +1,66 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    background-color: #f5f5f5;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#MAIN_DIV {
+    display: flex;
+    width: 80%;
+    height: 100%;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+}
+
+#participants {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
+    width: 100%;
+}
+
+#participants_list {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+#tempo_divisions {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    width: 100%;
+}
+
+.horizontal-div {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+#title {
+    /*Background*/
+    width: 100%;
+    background-color: burlywood;
+    /*Text*/
+    text-align: center;
+    color: white;
+    font-size: 4rem;
+    /*Padding*/
+    padding: 10px;
+    margin-bottom: 10px;
+}

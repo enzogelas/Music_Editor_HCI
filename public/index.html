@@ -1,0 +1,33 @@
+<head>
+    <title>Music Editor</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <h1 id="title">Music Editor</h1>
+    <div id="MAIN_DIV">
+        <div id="participants">
+            <span>Participants :</span>
+            <div id="participants_list">
+                <button>Me</button>
+                <button>Mario</button>
+                <button>Lea</button>
+            </div>
+        </div>
+        <div id="tempo_divisions">
+            <div class="horizontal-div" id="tempo">
+                <span>BPM :</span>
+                <input type="number" id="bpm-input" value="120">
+            </div>
+            <div class="horizontal-div" id="divisions">
+                <span>Divisions :</span>
+                <input type="number" id="divisions-input" value="8">
+                <button id="submit-divisions">OK</button>
+                </div>
+        </div>
+        <canvas id="canvas"></canvas>  
+    </div>
+      
+
+    <script src="socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
