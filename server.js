@@ -9,7 +9,7 @@ const io = socketIo(server);
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+    res.sendFile('index.html');
 });
 
 io.on('connection', (socket) => {
