@@ -1,13 +1,20 @@
+// Global variables
 let divisions = 8;
 let instruments = 3;
 let notes = Array.from({length: instruments}, ()=>Array.from({length: divisions}, ()=>false)); 
-console.log(notes);
-let audios = Array.from({length: instruments}, ()=>Array.from({length: divisions}, ()=>new Audio()));
-console.log(audios);
 
-// BPM of the music to listen to
 let bpm = 120;
 
+// Variables for placing notes
+let mouseIn = false; // True if the mouse is in the sheet
+let currentNote = {x:0, y:0}; // Current note being placed
+let mousePressed = false; // True if the mouse is pressed
+let mode = 'add'; // 'add' or 'remove' (for the mouse dragging)
+
+// Array containing the audio objects
+let audios = Array.from({length: instruments}, ()=>Array.from({length: divisions}, ()=>new Audio()));
+
+// STATIC FILES (AUDIOS AND IMAGES)
 // Load the icons used for the instruments
 const hihat = new Image();
 hihat.src = 'icons/hihat.png';
@@ -25,7 +32,6 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 let unitLength = canvas.width/divisions;
-let hoveredNote = {x:0, y:0};
 
 function updateUnitLength(){
     unitLength = canvas.width/divisions;
@@ -37,24 +43,54 @@ document.getElementById('bpm-input').addEventListener('input', (e)=>{
     console.log("New bpm is :", bpm);    
 })
 
+/*
 document.getElementById('divisions-input').addEventListener('input', (e)=>{
     divisions = e.target.value;
-    updateSheet();
+    update();
+})
+*/
+canvas.addEventListener('mouseenter', (e)=>{
+    mouseIn = true;
 })
 
-canvas.addEventListener('click', (e)=>{
+canvas.addEventListener('mouseleave', (e)=>{
+    mouseIn = false;
+})
+
+canvas.addEventListener('mousedown', (e)=>{
+    mousePressed = true;
     const x = Math.floor(e.offsetX/unitLength);
     const y = Math.floor(e.offsetY/unitLength);
-    notes[y][x] = !notes[y][x];
+    if(!notes[y][x]) mode = 'add';
+    else mode = 'remove';
+    mousePressedOn(x, y);
     updateSheet();
 })
 
 canvas.addEventListener('mousemove', (e)=>{
     const x = Math.floor(e.offsetX/unitLength);
     const y = Math.floor(e.offsetY/unitLength);
-    hoveredNote = {x:x, y:y};
+    const tempNote = {x:x, y:y};
+    if(tempNote.x != currentNote.x || tempNote.y != currentNote.y){
+        currentNote = tempNote;
+        if (mousePressed && mouseIn){
+            mousePressedOn(x, y);
+        }
+    } 
     updateSheet();
 })
+
+window.addEventListener('mouseup', (e)=>{
+    mousePressed = false;
+})
+
+function mousePressedOn(x, y){
+    if (mode == 'add'){
+        notes[y][x] = true;
+    } else {
+        notes[y][x] = false;
+    }
+}
 
 function updateSheet(){
     // Update the canvas size
@@ -67,7 +103,7 @@ function updateSheet(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = 'lightblue';
-    ctx.fillRect(hoveredNote.x*unitLength, hoveredNote.y*unitLength, unitLength, unitLength);
+    ctx.fillRect(currentNote.x*unitLength, currentNote.y*unitLength, unitLength, unitLength);
 
     // Draw the divisions
     ctx.fillStyle = 'darkgray';
@@ -97,12 +133,6 @@ function updateAudio(){
             }
         }
     }
-    // Prints the sources of the audios
-    for (let j = 0; j < instruments; j++){
-        for (let i = 0; i < divisions; i++){
-            console.log(audios[j][i].src);
-        }
-    }
 }
 
 function playAudio(){
@@ -123,9 +153,14 @@ function playAudio(){
     }, 60000/bpm);
 }
 
-window.addEventListener('resize', updateSheet);
+function update(){
+    updateSheet();
+    updateAudio();
+}
 
-updateSheet();
+update();
+
+window.addEventListener('resize', updateSheet);
 
 const client = io();
 
@@ -134,18 +169,15 @@ client.on('test', ()=>{
     client.emit('test-back');
 });
 
-function disconnect(){
-    client.disconnect();
-}
+client.on('msg-back', (msg)=>{
+    console.log("Message received: ", msg);
+})
 
 // Test
 window.addEventListener('keydown', (e)=>{
-    if (e.key == ' '){
-        const audio = new Audio('A4.mp3');
-        audio.play();
-    } else if (e.key == 'u'){
-        updateAudio();
-    } else if (e.key == 'p'){
+    if (e.key == 'p'){
         playAudio();
+    } else if (e.key == 't'){
+        client.emit('msg', 'Hello');
     }
 })

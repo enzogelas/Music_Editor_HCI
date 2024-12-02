@@ -12,8 +12,10 @@ app.get('/', (req, res) => {
     res.sendFile('index.html');
 });
 
+const usersId = [];
+
 io.on('connection', (socket) => {
-    console.log('New usr connected');
+    console.log('New usr connected :', socket.id);
     io.emit('test');
     socket.on('test-back', () => {
         console.log('Test back received');
@@ -21,7 +23,12 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('User disconnected');
     });
+    socket.on('msg', (msg) => {
+        console.log('Message received from client:', socket.id);
+        socket.emit('msg-back', msg);
+    });
 });
+
 
 const PORT = process.argv[2] || 8000;
 server.listen(PORT, () => {
