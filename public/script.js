@@ -11,7 +11,10 @@ let currentNote = {x:0, y:0}; // Current note being placed
 let mousePressed = false; // True if the mouse is pressed
 let mode = 'add'; // 'add' or 'remove' (for the mouse dragging)
 
-// Array containing the audio objects
+// Variables for playing the audio
+let playingInterval = null;
+let playing = false;
+let currentDivision = 0;
 let audios = Array.from({length: instruments}, ()=>Array.from({length: divisions}, ()=>new Audio()));
 
 // STATIC FILES (AUDIOS AND IMAGES)
@@ -64,7 +67,7 @@ canvas.addEventListener('mousedown', (e)=>{
     if(!notes[y][x]) mode = 'add';
     else mode = 'remove';
     mousePressedOn(x, y);
-    updateSheet();
+    update();
 })
 
 canvas.addEventListener('mousemove', (e)=>{
@@ -75,9 +78,10 @@ canvas.addEventListener('mousemove', (e)=>{
         currentNote = tempNote;
         if (mousePressed && mouseIn){
             mousePressedOn(x, y);
+            update();
         }
+        updateSheet();
     } 
-    updateSheet();
 })
 
 window.addEventListener('mouseup', (e)=>{
@@ -90,6 +94,8 @@ function mousePressedOn(x, y){
     } else {
         notes[y][x] = false;
     }
+    console.log("Telling the server to update the sheet");
+    client.emit('update-sheet', notes);
 }
 
 function updateSheet(){
@@ -117,15 +123,19 @@ function updateSheet(){
                 ctx.drawImage(instrumentsIcons[j], i*unitLength, j*unitLength, unitLength, unitLength);
             }
         }
+    }
+    // Draw the vertical line when the audio is playing
+    if(playing){
         ctx.beginPath();
-        ctx.moveTo((i+0.5)*unitLength, 0);
-        ctx.lineTo((i+0.5)*unitLength, canvas.height);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.moveTo((currentDivision+0.5)*unitLength, 0);
+        ctx.lineTo((currentDivision+0.5)*unitLength, canvas.height);
         ctx.stroke();
     }
 }
 
 function updateAudio(){
-    console.log("Updating audio");
     for (let j = 0; j < instruments; j++){
         for (let i = 0; i < divisions; i++){
             if (notes[j][i]){
@@ -136,20 +146,19 @@ function updateAudio(){
 }
 
 function playAudio(){
-    updateAudio();
     console.log("Playing audio");
-    let currentDivision = 0;
-    let intervalId = setInterval(()=>{
+    currentDivision = 0;
+    playingInterval = setInterval(()=>{
         for (let j = 0; j < instruments; j++){
             if (notes[j][currentDivision]){
                 audios[j][currentDivision].play();
             }
         }
+        updateSheet();
+        // Shift to the next division
         currentDivision++;
-        if (currentDivision == divisions){
-            console.log("Audio played");
-            clearInterval(intervalId);
-        }
+        if(currentDivision == divisions) currentDivision = 0;
+        
     }, 60000/bpm);
 }
 
@@ -173,10 +182,22 @@ client.on('msg-back', (msg)=>{
     console.log("Message received: ", msg);
 })
 
+client.on('update-sheet', (sheet)=>{
+    notes = sheet;
+    update();
+})
+
 // Test
 window.addEventListener('keydown', (e)=>{
     if (e.key == 'p'){
-        playAudio();
+        if(!playing){
+            playing=true;
+            playAudio();
+        } else {
+            clearInterval(playingInterval);
+            playing = false;
+            updateSheet();
+        }
     } else if (e.key == 't'){
         client.emit('msg', 'Hello');
     }

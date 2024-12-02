@@ -12,20 +12,30 @@ app.get('/', (req, res) => {
     res.sendFile('index.html');
 });
 
-const usersId = [];
+const userIds = [];
+
+let currentSheet = null;
 
 io.on('connection', (socket) => {
-    console.log('New usr connected :', socket.id);
-    io.emit('test');
+    userIds.push(socket.id);
+    console.log(userIds);
+    socket.emit('test');
     socket.on('test-back', () => {
-        console.log('Test back received');
+        console.log('Test back received from client:', socket.id);
     })
     socket.on('disconnect', () => {
-        console.log('User disconnected');
+        userIds.splice(userIds.indexOf(socket.id), 1);
+        console.log('User disconnected', socket.id);
+        console.log("Users left :", userIds);
     });
     socket.on('msg', (msg) => {
-        console.log('Message received from client:', socket.id);
-        socket.emit('msg-back', msg);
+        console.log('Client', socket.id, 'sent message :', msg);
+        socket.broadcast.emit('msg-back', msg);
+    });
+    socket.on('update-sheet', (sheet) => {
+        currentSheet = sheet;
+        console.log('Sheet updated:', sheet);
+        socket.broadcast.emit('update-sheet', sheet);
     });
 });
 
