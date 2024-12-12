@@ -15,35 +15,90 @@ body {
 
 #MAIN_DIV {
     display: flex;
-    width: 80%;
+    width: 90%;
     height: 100%;
+    margin-top: 20px;
+
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
+
     gap: 20px;
 }
 
-#participants {
+#NAME_DIV {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
+    gap: 20px;
 
     width: 100%;
 }
 
-#participants_list {
+#NAME_DIALOG {
+    position: fixed;
+   
+    top: 50%;
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    z-index: 1000; 
+
+    width: 300px; /* Set a reasonable width */
+    padding: 20px; /* Add padding for content spacing */
+    border: 1px solid black; /* Border for visibility */
+    border-radius: 8px; /* Rounded corners for modern look */
+    background-color: white; /* White background for contrast */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for emphasis */
+
+}
+
+#CHANGE_NAME {
+    width: 1rem;
+    height: 1rem;
+    background-image: url(icons/modify.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none; 
+    cursor: pointer;
+}
+
+#PARTICIPANTS_DIV {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+
+    width: 100%;
+}
+
+#PARTICIPANTS_LIST_DIV {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
     gap: 10px;
 }
 
-#tempo_divisions {
+#TEMPO_DIVISIONS_DIV {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
 
     width: 100%;
+}
+
+#TEMPO_DIV {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+#DIVISIONS_DIV {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
 }
 
 .horizontal-div {

@@ -12,31 +12,55 @@ app.get('/', (req, res) => {
     res.sendFile('index.html');
 });
 
-const userIds = [];
+const users = [];
 
-let currentSheet = null;
+let nbOfDivisions = 8;
+let instruments = 3;
+let sheet = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisions}, ()=>false));
+sheet[0][0] = true;
 
 io.on('connection', (socket) => {
-    userIds.push(socket.id);
-    console.log(userIds);
-    socket.emit('test');
-    socket.on('test-back', () => {
-        console.log('Test back received from client:', socket.id);
-    })
+    users.push(
+        {
+            id: socket.id,
+            name: "Unknown"
+        }
+    );
+    console.log('New user : ', socket.id);
+    console.log(users);
+    socket.emit('update-sheet', sheet);
+
+    socket.emit('confirm-name', "Unknown");
+    io.emit('update-users', users)
+
     socket.on('disconnect', () => {
-        userIds.splice(userIds.indexOf(socket.id), 1);
-        console.log('User disconnected', socket.id);
-        console.log("Users left :", userIds);
+        const indexToRemove = users.map(user => user.id).indexOf(socket.id);
+        console.log('User disconnected : ', users[indexToRemove]);
+        users.splice(indexToRemove, 1);
+        console.log("Users left :", users);
     });
-    socket.on('msg', (msg) => {
-        console.log('Client', socket.id, 'sent message :', msg);
-        socket.broadcast.emit('msg-back', msg);
-    });
-    socket.on('update-sheet', (sheet) => {
-        currentSheet = sheet;
-        console.log('Sheet updated:', sheet);
+
+    socket.on('update-name', (newName) => {
+        const indexToUpdate = users.map(user => user.id).indexOf(socket.id);
+        users[indexToUpdate].name = newName;
+        console.log('Name updated in server : ', users[indexToUpdate]);
+        socket.emit('confirm-name', newName);
+        io.emit('update-users', users);
+    })
+
+    socket.on('update-sheet', (newSheet) => {
+        sheet = newSheet;
+        //console.log('Sheet updated:', sheet);
         socket.broadcast.emit('update-sheet', sheet);
     });
+
+    socket.on('submit-divisions', (newDivisions) =>{
+        socket.broadcast.emit('ask-confirmation-divisions', newDivisions);
+    }); 
+    socket.on('confirm-divisions', (newDivisions)=>{
+        console.log("Good validation, but nothing happened. HAHA !!!")
+    });
+    
 });
 
 

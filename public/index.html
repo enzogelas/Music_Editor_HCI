@@ -3,22 +3,33 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <h1 id="title">Music Editor</h1>
+    <h1 id="TITLE">Music Editor</h1>
     <div id="MAIN_DIV">
-        <div id="participants">
-            <span>Participants :</span>
-            <div id="participants_list">
+        <div id="NAME_DIV">
+            <span>Name : </span>
+            <span id="NAME"></span>
+            <button id="CHANGE_NAME"></button>
+            <dialog id="NAME_DIALOG">
+                <label for="new-name">Enter your new name :</label>
+                <input type="text" id="NEW_NAME">
+                <button id="SUBMIT_NAME">OK</button>
+                <button id="CLOSE_NAME_DIALOG">Cancel</button>
+            </dialog>
+        </div>
+        <div id="PARTICIPANTS_DIV">
+            <span>Participants : </span>
+            <div id="PARTICIPANTS_LIST_DIV">
                 <button>Me</button>
                 <button>Mario</button>
                 <button>Lea</button>
             </div>
         </div>
-        <div id="tempo_divisions">
-            <div class="horizontal-div" id="tempo">
+        <div id="TEMPO_DIVISIONS_DIV">
+            <div class="horizontal-div" id="TEMPO_DIV">
                 <span>BPM :</span>
                 <input type="number" id="bpm-input" value="120">
             </div>
-            <div class="horizontal-div" id="divisions">
+            <div class="horizontal-div" id="DIVISIONS_DIV">
                 <span>Divisions :</span>
                 <input type="number" id="divisions-input" value="8">
                 <button id="submit-divisions">OK</button>
