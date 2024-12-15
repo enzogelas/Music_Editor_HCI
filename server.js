@@ -20,40 +20,53 @@ let sheet = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisi
 sheet[0][0] = true;
 
 io.on('connection', (socket) => {
-    users.push(
+    // On connection, add the user to the list of users
+    const defaultName = "User " + Math.floor(Math.random()*1000);
+    const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+    const newUser =
         {
             id: socket.id,
-            name: "Unknown"
+            name: defaultName,
+            color: randomColor
         }
-    );
-    console.log('New user : ', socket.id);
-    console.log(users);
+    users.push(newUser);
+    
+    // Send the actual sheet to the new user
     socket.emit('update-sheet', sheet);
 
-    socket.emit('confirm-name', "Unknown");
+    // Send the name the user
+    socket.emit('confirm-perso', newUser);
+    // Warn everyone that a new user has joined
     io.emit('update-users', users)
 
+    // DISCONNECTION
     socket.on('disconnect', () => {
+        // Remove the user from the list of users
         const indexToRemove = users.map(user => user.id).indexOf(socket.id);
-        console.log('User disconnected : ', users[indexToRemove]);
         users.splice(indexToRemove, 1);
-        console.log("Users left :", users);
+        io.emit('update-users', users);
     });
 
-    socket.on('update-name', (newName) => {
+    // EVENTS FOR CHANGING A NAME
+    socket.on('update-perso', (newPerso) => {
         const indexToUpdate = users.map(user => user.id).indexOf(socket.id);
-        users[indexToUpdate].name = newName;
-        console.log('Name updated in server : ', users[indexToUpdate]);
-        socket.emit('confirm-name', newName);
-        io.emit('update-users', users);
+        users[indexToUpdate].name = newPerso.name;
+        users[indexToUpdate].color = newPerso.color;
+        console.log('Perso updated:', users[indexToUpdate]);
+        // Confirm the change to the user
+        socket.emit('confirm-perso', newPerso); 
+        // Inform everyone of the change
+        io.emit('update-users', users); 
     })
 
+    // EVENTS FOR CHANGING THE SHEET
     socket.on('update-sheet', (newSheet) => {
         sheet = newSheet;
         //console.log('Sheet updated:', sheet);
         socket.broadcast.emit('update-sheet', sheet);
     });
 
+    // EVENTS FOR CHANGING THE NUMBER OF DIVISIONS
     socket.on('submit-divisions', (newDivisions) =>{
         socket.broadcast.emit('ask-confirmation-divisions', newDivisions);
     }); 

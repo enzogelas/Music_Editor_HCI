@@ -5,36 +5,42 @@
 <body>
     <h1 id="TITLE">Music Editor</h1>
     <div id="MAIN_DIV">
-        <div id="NAME_DIV">
+        <div class="horizontal-div" id="PERSO_DIV">
             <span>Name : </span>
             <span id="NAME"></span>
-            <button id="CHANGE_NAME"></button>
-            <dialog id="NAME_DIALOG">
-                <label for="new-name">Enter your new name :</label>
+            <span id="COLOR"></span>
+            <button id="CHANGE_PERSO"></button>
+            <dialog id="PERSO_DIALOG">
+                <label for="NEW_NAME">Choose name :</label>
                 <input type="text" id="NEW_NAME">
-                <button id="SUBMIT_NAME">OK</button>
-                <button id="CLOSE_NAME_DIALOG">Cancel</button>
+                <br>
+                <label for="NEW_COLOR">Choose color :</label>
+                <input type="color" id="NEW_COLOR">
+                <br>
+                <button id="SUBMIT_PERSO">OK</button>
+                <button id="CLOSE_PERSO_DIALOG">Cancel</button>
             </dialog>
         </div>
-        <div id="PARTICIPANTS_DIV">
+        <div class="horizontal-div" id="PARTICIPANTS_DIV">
             <span>Participants : </span>
-            <div id="PARTICIPANTS_LIST_DIV">
-                <button>Me</button>
-                <button>Mario</button>
-                <button>Lea</button>
+            <div class="horizontal-div" id="PARTICIPANTS_LIST_DIV">
+
             </div>
         </div>
-        <div id="TEMPO_DIVISIONS_DIV">
+        <div class="horizontal-div" id="TEMPO_DIVISIONS_DIV">
             <div class="horizontal-div" id="TEMPO_DIV">
                 <span>BPM :</span>
-                <input type="number" id="bpm-input" value="120">
+                <input type="number" id="BPM_INPUT" value="120">
             </div>
             <div class="horizontal-div" id="DIVISIONS_DIV">
                 <span>Divisions :</span>
-                <input type="number" id="divisions-input" value="8">
-                <button id="submit-divisions">OK</button>
-                </div>
+                <span id="DIVISIONS">8</span>
+                <button id="INCREASE_DIVISIONS">+</button>
+                <button id="DECREASE_DIVISIONS">-</button>
+                <button id="SUBMIT_DIVISIONS">OK</button>
+            </div>
         </div>
+        <button id="PLAY"></button>
         <canvas id="canvas"></canvas>  
     </div>
       

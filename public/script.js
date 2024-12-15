@@ -23,11 +23,11 @@ let audios = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivis
 // STATIC FILES (AUDIOS AND IMAGES)
 // Load the icons used for the instruments
 const hihat = new Image();
-hihat.src = 'icons/hihat.png';
+hihat.src = 'instrument_icons/hihat.png';
 const snare = new Image();
-snare.src = 'icons/snare.png';
+snare.src = 'instrument_icons/snare.png';
 const kick = new Image();
-kick.src = 'icons/kick.png';
+kick.src = 'instrument_icons/kick.png';
 
 const instrumentsIcons = [hihat, snare, kick];
 
@@ -37,50 +37,27 @@ let audioSources = ['hihat.wav', 'snare.wav', 'kick.wav'];
 // Canvas containing the music sheet
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
+// The unit length of the canvas
 let unitLength = canvas.width/nbOfDivision;
 
 function updateUnitLength(){
     unitLength = canvas.width/nbOfDivision;
 }
 
-// Handle changes in the inputsrs
-document.getElementById('bpm-input').addEventListener('input', (e)=>{
-    bpm = e.target.value;
-    console.log("New bpm is :", bpm);    
+// Handle BPM changes
+document.getElementById("BPM_INPUT").addEventListener('input', (e)=>{
+    bpm = e.target.value;    
 })
 
-/*
-document.getElementById('divisions-input').addEventListener('input', (e)=>{
-    divisions = e.target.value;
-    update();
-})
-*/
-let divisionsInput = document.getElementById('divisions-input');
-
-document.getElementById('submit-divisions').addEventListener('click', ()=>{
-    //client.emit('submit-divisions', parseInt(nbOfDivision))
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    changeNbOfDivisions(parseInt(divisionsInput.value));
-})
-
-client.on('ask-confirmation-divisions', (newDivisions) =>{
-    alert("The divisions will be set to "+ newDivisions);
-    client.emit('confirm-divisions', newDivisions);
-})
-
+// All mouse events (to modify the sheet)
 canvas.addEventListener('mouseenter', (e)=>{
     mouseIn = true;
+    updateSheet();
 })
 
 canvas.addEventListener('mouseleave', (e)=>{
     mouseIn = false;
+    updateSheet();
 })
 
 canvas.addEventListener('mousedown', (e)=>{
@@ -102,15 +79,18 @@ canvas.addEventListener('mousemove', (e)=>{
         if (mousePressed && mouseIn){
             mousePressedOn(x, y);
             update();
+            return;
         }
         updateSheet();
     } 
 })
 
 window.addEventListener('mouseup', (e)=>{
-    mousePressed = false;
-    console.log("Updating the sheet for everyone");
-    client.emit('update-sheet', notes);
+    if(mousePressed){
+        mousePressed = false;
+        console.log("Updating the sheet for everyone");
+        client.emit('update-sheet', notes);
+    }
 })
 
 function mousePressedOn(x, y){
@@ -121,6 +101,7 @@ function mousePressedOn(x, y){
     }
 }
 
+// To update the sheet locally
 function updateSheet(){
     // Update the canvas size
     canvas.width = window.innerWidth*0.8;
@@ -131,8 +112,21 @@ function updateSheet(){
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = 'lightblue';
-    ctx.fillRect(currentNote.x*unitLength, currentNote.y*unitLength, unitLength, unitLength);
+    // Draw the hovered note
+    if (mouseIn){
+        ctx.fillStyle = 'lightblue';
+        ctx.fillRect(currentNote.x*unitLength, currentNote.y*unitLength, unitLength, unitLength);
+    }
+
+    // Draw the vertical line when the audio is playing
+    if(playing){
+        ctx.beginPath();
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.moveTo((currentDivision+0.5)*unitLength, 0);
+        ctx.lineTo((currentDivision+0.5)*unitLength, canvas.height);
+        ctx.stroke();
+    }
 
     // Draw the divisions
     ctx.fillStyle = 'darkgray';
@@ -149,17 +143,8 @@ function updateSheet(){
             }
         }
     }
-    // Draw the vertical line when the audio is playing
-    if(playing){
-        ctx.beginPath();
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 2;
-        ctx.moveTo((currentDivision+0.5)*unitLength, 0);
-        ctx.lineTo((currentDivision+0.5)*unitLength, canvas.height);
-        ctx.stroke();
-    }
 }
-
+// To update the audio locally
 function updateAudio(){
     for (let j = 0; j < instruments; j++){
         for (let i = 0; i < nbOfDivision; i++){
@@ -170,22 +155,39 @@ function updateAudio(){
     }
 }
 
-function playAudio(){
-    console.log("Playing audio");
-    currentDivision = 0;
-    playingInterval = setInterval(()=>{
-        for (let j = 0; j < instruments; j++){
-            if (notes[j][currentDivision]){
-                audios[j][currentDivision].play();
-            }
-        }
-        updateSheet();
-        // Shift to the next division
-        currentDivision++;
-        if(currentDivision == nbOfDivision) currentDivision = 0;
-        
-    }, 60000/bpm);
-}
+
+// To update the number of divisions
+//
+//
+const divisionsDisplay = document.getElementById('DIVISIONS');
+const increaseDivisionsButton = document.getElementById('INCREASE_DIVISIONS');
+const decreaseDivisionsButton = document.getElementById('DECREASE_DIVISIONS');
+
+increaseDivisionsButton.addEventListener('click', ()=>{
+    changeNbOfDivisions(nbOfDivision+1);
+});
+
+decreaseDivisionsButton.addEventListener('click', ()=>{
+    changeNbOfDivisions(nbOfDivision-1);
+});
+
+
+document.getElementById('SUBMIT_DIVISIONS').addEventListener('click', ()=>{
+    //client.emit('submit-divisions', parseInt(nbOfDivision))
+    // TO CHANGE
+    // TO CHANGE
+    // TO CHANGE
+    // TO CHANGE
+    // TO CHANGE
+    // TO CHANGE
+    // TO CHANGE
+    changeNbOfDivisions(parseInt(divisionsInput.value));
+})
+
+client.on('ask-confirmation-divisions', (newDivisions) =>{
+    alert("The divisions will be set to "+ newDivisions);
+    client.emit('confirm-divisions', newDivisions);
+})
 
 function changeNbOfDivisions(newNbOfDivisions){
     newNotes = Array.from({length: instruments}, ()=>Array.from({length: newNbOfDivisions}, ()=>false));
@@ -200,11 +202,15 @@ function changeNbOfDivisions(newNbOfDivisions){
         }
     }
     nbOfDivision = newNbOfDivisions;
+    divisionsDisplay.textContent = nbOfDivision;
     notes = newNotes;
     
     updateSheet();
 
 }
+//
+//
+//
 
 function update(){
     updateSheet();
@@ -215,41 +221,49 @@ update();
 
 window.addEventListener('resize', updateSheet);
 
-// Part to change the name
-const nameDialog = document.getElementById('NAME_DIALOG');
-console.log(nameDialog);
-const openNameDialogButton = document.getElementById('CHANGE_NAME');
-const submitNameButton = document.getElementById('SUBMIT_NAME');
-const closeNameDialogButton = document.getElementById('CLOSE_NAME_DIALOG');
+// Part to personalize name and color
+//
+//
+const persoDialog = document.getElementById('PERSO_DIALOG');
 
-openNameDialogButton.addEventListener('click', (e)=>{
-    nameDialog.showModal();
+const openPersoDialogButton = document.getElementById('CHANGE_PERSO');
+const submitPersoButton = document.getElementById('SUBMIT_PERSO');
+const closePersoDialogButton = document.getElementById('CLOSE_PERSO_DIALOG');
+
+openPersoDialogButton.addEventListener('click', (e)=>{
+    persoDialog.showModal();
 })
 
-submitNameButton.addEventListener('click', (e)=>{
+submitPersoButton.addEventListener('click', (e)=>{
     const newName = document.getElementById('NEW_NAME').value;
-    nameDialog.close();
-    document.getElementById('NAME').textContent = newName;
-    client.emit('update-name', newName);
+    const newColor = document.getElementById('NEW_COLOR').value;
+    persoDialog.close();
+    client.emit('update-perso', {name: newName, color: newColor});
 })
 
-closeNameDialogButton.addEventListener('click', (e)=>{
-    nameDialog.close();
+closePersoDialogButton.addEventListener('click', (e)=>{
+    persoDialog.close();
 })
 
-client.on('confirm-name', (newName) => {
-    document.getElementById('NAME').textContent = newName;
+client.on('confirm-perso', (newPerso) => {
+    console.log(newPerso);
+    document.getElementById('NAME').textContent = newPerso.name;
+    document.getElementById('COLOR').style.backgroundColor = newPerso.color;
 })
 
 client.on('update-users', (users) =>{
     const participantsList = document.getElementById("PARTICIPANTS_LIST_DIV");
     while(participantsList.firstChild) participantsList.removeChild(participantsList.firstChild);
-    for (user of users){
-        const participant = document.createElement("button");
+    for (const user of users){
+        const participant = document.createElement("span");
+        participant.className = "participant-name";
         participant.textContent = user.name;
+        participant.style.border = "4px solid "+user.color;
         participantsList.appendChild(participant);
     }
 })
+//
+//
 ////////////////////
 
 client.on('update-sheet', (sheet)=>{
@@ -257,18 +271,32 @@ client.on('update-sheet', (sheet)=>{
     update();
 })
 
-// Test
-window.addEventListener('keydown', (e)=>{
-    if (e.key == 'p'){
-        if(!playing){
-            playing=true;
-            playAudio();
-        } else {
-            clearInterval(playingInterval);
-            playing = false;
-            updateSheet();
-        }
-    } else if (e.key == 't'){
-        client.emit('msg', 'Hello');
+// To play the audio
+const playButton = document.getElementById('PLAY');
+playButton.style.backgroundImage = `url(icons/play.png)`;
+
+document.getElementById('PLAY').addEventListener('click', ()=>{
+    if(playing){
+        playing = false;
+        playButton.style.backgroundImage = `url(icons/play.png)`;
+    } else {
+        playAudio();
+        playing = true;
+        playButton.style.backgroundImage = `url(icons/pause.png)`;
     }
-})
+});
+
+function playAudio(){
+    setTimeout(()=>{
+        for (let j = 0; j < instruments; j++){
+            if (notes[j][currentDivision]){
+                audios[j][currentDivision].play();
+            }
+        }
+        updateSheet();
+        // Shift to the next division
+        currentDivision++;
+        if(currentDivision == nbOfDivision) currentDivision = 0;
+        if(playing) playAudio();
+    }, 60000/bpm);
+}
