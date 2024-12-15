@@ -2,6 +2,9 @@
 const client = io();
 
 // Global variables
+let globalNbOfDivisions = 8;
+let suggestedDivisions = 8;
+
 let nbOfDivision = 8;
 let instruments = 3;
 let notes = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivision}, ()=>false)); 
@@ -173,20 +176,39 @@ decreaseDivisionsButton.addEventListener('click', ()=>{
 
 
 document.getElementById('SUBMIT_DIVISIONS').addEventListener('click', ()=>{
-    //client.emit('submit-divisions', parseInt(nbOfDivision))
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    // TO CHANGE
-    changeNbOfDivisions(parseInt(divisionsInput.value));
+    if(nbOfDivision == globalNbOfDivisions) alert("The divisions are already set to "+nbOfDivision);
+    else {
+        client.emit('submit-divisions', nbOfDivision);
+    }
+    
 })
 
+const confirmDivisionsDialog = document.getElementById('CONFIRM_DIVISIONS_DIALOG');
+const suggestedDivisionsDisplay = document.getElementById('SUGGESTED_DIVISIONS');
+const confirmDivisionsButton = document.getElementById('CONFIRM_DIVISIONS');
+const cancelDivisionsButton = document.getElementById('CANCEL_DIVISIONS');
+
+
 client.on('ask-confirmation-divisions', (newDivisions) =>{
-    alert("The divisions will be set to "+ newDivisions);
-    client.emit('confirm-divisions', newDivisions);
+    suggestedDivisions = newDivisions;
+    suggestedDivisionsDisplay.textContent = suggestedDivisions;
+    confirmDivisionsDialog.showModal();
+})
+
+confirmDivisionsButton.addEventListener('click', (e)=>{
+    client.emit('confirm-divisions', suggestedDivisions);
+})
+
+cancelDivisionsButton.addEventListener('click', (e)=>{
+    client.emit('infirm-divisions');
+})
+
+client.on('update-divisions', (newDivisions) => {
+    console.log("Updating the number of divisions to", newDivisions);
+    globalNbOfDivisions = newDivisions;
+    changeNbOfDivisions(newDivisions);
+    client.emit('update-sheet', notes);
+    confirmDivisionsDialog.close();
 })
 
 function changeNbOfDivisions(newNbOfDivisions){
@@ -205,8 +227,7 @@ function changeNbOfDivisions(newNbOfDivisions){
     divisionsDisplay.textContent = nbOfDivision;
     notes = newNotes;
     
-    updateSheet();
-
+    update();
 }
 //
 //

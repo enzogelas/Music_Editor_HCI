@@ -13,6 +13,7 @@ app.get('/', (req, res) => {
 });
 
 const users = [];
+let usersToConfirm = [];
 
 let nbOfDivisions = 8;
 let instruments = 3;
@@ -68,11 +69,26 @@ io.on('connection', (socket) => {
 
     // EVENTS FOR CHANGING THE NUMBER OF DIVISIONS
     socket.on('submit-divisions', (newDivisions) =>{
+        const id = socket.id;
+        usersToConfirm = users.map(user => user.id);
+        console.log(usersToConfirm);
+        usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
+        console.log(usersToConfirm);
         socket.broadcast.emit('ask-confirmation-divisions', newDivisions);
     }); 
     socket.on('confirm-divisions', (newDivisions)=>{
-        console.log("Good validation, but nothing happened. HAHA !!!")
+        const id = socket.id;
+        usersToConfirm = usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
+        console.log(usersToConfirm);
+        if(usersToConfirm.length <= 1){
+            nbOfDivisions = newDivisions; 
+            io.emit('update-divisions', nbOfDivisions);
+        }
     });
+    socket.on('infirm-divisions', ()=>{
+        io.emit('update-divisions', nbOfDivisions);
+        io.emit('update-sheet', sheet);
+    })
     
 });
 

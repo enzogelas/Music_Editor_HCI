@@ -68,7 +68,7 @@ button {
     background-position: center;
 }
 
-#PERSO_DIALOG {
+dialog {
     position: fixed;
    
     top: 50%;
