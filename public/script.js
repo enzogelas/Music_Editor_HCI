@@ -207,7 +207,11 @@ client.on('update-divisions', (newDivisions) => {
     console.log("Updating the number of divisions to", newDivisions);
     globalNbOfDivisions = newDivisions;
     changeNbOfDivisions(newDivisions);
-    client.emit('update-sheet', notes);
+    client.emit('update-sheet', {
+        nbOfDivisions: nbOfDivision,
+        instruments: instruments,
+        notes: notes        
+    });
     confirmDivisionsDialog.close();
 })
 

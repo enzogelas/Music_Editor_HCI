@@ -31,14 +31,14 @@ io.on('connection', (socket) => {
             color: randomColor
         }
     users.push(newUser);
-    
-    // Send the actual sheet to the new user
-    socket.emit('update-sheet', sheet);
 
     // Send the name the user
     socket.emit('confirm-perso', newUser);
     // Warn everyone that a new user has joined
     io.emit('update-users', users)
+
+    // Send the actual sheet to the new user
+    socket.emit('update-sheet', sheet);
 
     // DISCONNECTION
     socket.on('disconnect', () => {
@@ -62,7 +62,9 @@ io.on('connection', (socket) => {
 
     // EVENTS FOR CHANGING THE SHEET
     socket.on('update-sheet', (newSheet) => {
-        sheet = newSheet;
+        nbOfDivisions = newSheet.nbOfDivisions;
+        instruments = newSheet.instruments
+        sheet = newSheet.notes;
         //console.log('Sheet updated:', sheet);
         socket.broadcast.emit('update-sheet', sheet);
     });
@@ -71,16 +73,20 @@ io.on('connection', (socket) => {
     socket.on('submit-divisions', (newDivisions) =>{
         const id = socket.id;
         usersToConfirm = users.map(user => user.id);
-        console.log(usersToConfirm);
         usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
-        console.log(usersToConfirm);
+        console.log("Amog the users", users);
+        console.log("User", id, "has submitted", newDivisions);
+        console.log("Users", usersToConfirm, "have to confirm");
         socket.broadcast.emit('ask-confirmation-divisions', newDivisions);
     }); 
     socket.on('confirm-divisions', (newDivisions)=>{
         const id = socket.id;
-        usersToConfirm = usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
-        console.log(usersToConfirm);
-        if(usersToConfirm.length <= 1){
+        console.log("User", id, "has confirmed", newDivisions);
+        usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
+        console.log("Users", usersToConfirm, "have to confirm");
+        if(usersToConfirm.length == 0){
+            console.log("All users have confirmed");
+            console.log("The new nb of divisions is", newDivisions);
             nbOfDivisions = newDivisions; 
             io.emit('update-divisions', nbOfDivisions);
         }
