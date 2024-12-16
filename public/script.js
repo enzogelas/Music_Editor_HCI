@@ -5,9 +5,9 @@ const client = io();
 let globalNbOfDivisions = 8;
 let suggestedDivisions = 8;
 
-let nbOfDivision = 8;
+let nbOfDivisions = 8;
 let instruments = 3;
-let notes = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivision}, ()=>false)); 
+let notes = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisions}, ()=>false)); 
 
 let bpm = 120;
 
@@ -21,7 +21,7 @@ let mode = 'add'; // 'add' or 'remove' (for the mouse dragging)
 let playingInterval = null;
 let playing = false;
 let currentDivision = 0;
-let audios = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivision}, ()=>new Audio()));
+let audios = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisions}, ()=>new Audio()));
 
 // STATIC FILES (AUDIOS AND IMAGES)
 // Load the icons used for the instruments
@@ -41,10 +41,10 @@ let audioSources = ['hihat.wav', 'snare.wav', 'kick.wav'];
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 // The unit length of the canvas
-let unitLength = canvas.width/nbOfDivision;
+let unitLength = canvas.width/nbOfDivisions;
 
 function updateUnitLength(){
-    unitLength = canvas.width/nbOfDivision;
+    unitLength = canvas.width/nbOfDivisions;
 }
 
 // Handle BPM changes
@@ -91,8 +91,13 @@ canvas.addEventListener('mousemove', (e)=>{
 window.addEventListener('mouseup', (e)=>{
     if(mousePressed){
         mousePressed = false;
-        console.log("Updating the sheet for everyone");
-        client.emit('update-sheet', notes);
+        const sheetToShare = {
+            nbOfDivisions: nbOfDivisions,
+            instruments: instruments,
+            sheet: notes
+        }
+        console.log("Gonna share the sheet", sheetToShare);
+        client.emit('update-sheet', sheetToShare);
     }
 })
 
@@ -108,7 +113,7 @@ function mousePressedOn(x, y){
 function updateSheet(){
     // Update the canvas size
     canvas.width = window.innerWidth*0.8;
-    canvas.height = canvas.width*instruments/nbOfDivision;
+    canvas.height = canvas.width*instruments/nbOfDivisions;
 
     updateUnitLength();
 
@@ -133,10 +138,11 @@ function updateSheet(){
 
     // Draw the divisions
     ctx.fillStyle = 'darkgray';
-    for (let i = 0; i < nbOfDivision; i++){
+    for (let i = 0; i < nbOfDivisions; i++){
         for (let j = 0; j < instruments; j++){
             instrumentsIcons[j].width = unitLength;
             instrumentsIcons[j].height = unitLength;
+            
             if(!notes[j][i]){
                 ctx.beginPath();
                 ctx.arc((i+0.5)*unitLength, (j+0.5)*unitLength, 5, 0, 2*Math.PI);
@@ -150,7 +156,7 @@ function updateSheet(){
 // To update the audio locally
 function updateAudio(){
     for (let j = 0; j < instruments; j++){
-        for (let i = 0; i < nbOfDivision; i++){
+        for (let i = 0; i < nbOfDivisions; i++){
             if (notes[j][i]){
                 audios[j][i].src = "audio/"+audioSources[j];
             }
@@ -167,18 +173,18 @@ const increaseDivisionsButton = document.getElementById('INCREASE_DIVISIONS');
 const decreaseDivisionsButton = document.getElementById('DECREASE_DIVISIONS');
 
 increaseDivisionsButton.addEventListener('click', ()=>{
-    changeNbOfDivisions(nbOfDivision+1);
+    changeNbOfDivisions(nbOfDivisions+1);
 });
 
 decreaseDivisionsButton.addEventListener('click', ()=>{
-    changeNbOfDivisions(nbOfDivision-1);
+    changeNbOfDivisions(nbOfDivisions-1);
 });
 
 
 document.getElementById('SUBMIT_DIVISIONS').addEventListener('click', ()=>{
-    if(nbOfDivision == globalNbOfDivisions) alert("The divisions are already set to "+nbOfDivision);
+    if(nbOfDivisions == globalNbOfDivisions) alert("The divisions are already set to "+nbOfDivisions);
     else {
-        client.emit('submit-divisions', nbOfDivision);
+        client.emit('submit-divisions', nbOfDivisions);
     }
     
 })
@@ -203,35 +209,34 @@ cancelDivisionsButton.addEventListener('click', (e)=>{
     client.emit('infirm-divisions');
 })
 
-client.on('update-divisions', (newDivisions) => {
-    console.log("Updating the number of divisions to", newDivisions);
-    globalNbOfDivisions = newDivisions;
-    changeNbOfDivisions(newDivisions);
-    client.emit('update-sheet', {
-        nbOfDivisions: nbOfDivision,
-        instruments: instruments,
-        notes: notes        
-    });
+client.on('update-divisions', (newNbOfDivisions) => {
+    globalNbOfDivisions = newNbOfDivisions;
+    resizeAudios(newNbOfDivisions);
     confirmDivisionsDialog.close();
 })
 
 function changeNbOfDivisions(newNbOfDivisions){
-    newNotes = Array.from({length: instruments}, ()=>Array.from({length: newNbOfDivisions}, ()=>false));
-    for(let i=0; i<Math.min(nbOfDivision, newNbOfDivisions); i++){
+    const newNotes = Array.from({length: instruments}, ()=>Array.from({length: newNbOfDivisions}, ()=>false));
+    for(let i=0; i<Math.min(nbOfDivisions, newNbOfDivisions); i++){
         for(let j=0; j<instruments; j++){
             newNotes[j][i] = notes[j][i];
         }
     }
-    for(let i=nbOfDivision; i<newNbOfDivisions; i++){
+    for(let i=nbOfDivisions; i<newNbOfDivisions; i++){
         for(let j=0; j<instruments; j++){
             newNotes[j][i] = false;
         }
     }
-    nbOfDivision = newNbOfDivisions;
-    divisionsDisplay.textContent = nbOfDivision;
+    nbOfDivisions = newNbOfDivisions;
+    divisionsDisplay.textContent = nbOfDivisions;
     notes = newNotes;
+    audios = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisions}, ()=>new Audio()));
     
     update();
+}
+
+function resizeAudios(newNbOfDivisions){
+    audios = Array.from({length: instruments}, ()=>Array.from({length: newNbOfDivisions}, ()=>new Audio()));
 }
 //
 //
@@ -291,8 +296,12 @@ client.on('update-users', (users) =>{
 //
 ////////////////////
 
-client.on('update-sheet', (sheet)=>{
-    notes = sheet;
+client.on('update-sheet', (newSheet)=>{
+    console.log("New sheet", newSheet);
+    nbOfDivisions = newSheet.nbOfDivisions;
+    divisionsDisplay.textContent = nbOfDivisions;
+    instruments = newSheet.instruments;
+    notes = newSheet.notes;
     update();
 })
 
@@ -301,6 +310,16 @@ const playButton = document.getElementById('PLAY');
 playButton.style.backgroundImage = `url(icons/play.png)`;
 
 document.getElementById('PLAY').addEventListener('click', ()=>{
+    triggerPlay();
+});
+
+window.addEventListener('keydown', (e)=>{
+    if(e.key == ' '){
+        triggerPlay();
+    }
+})
+
+function triggerPlay(){
     if(playing){
         playing = false;
         playButton.style.backgroundImage = `url(icons/play.png)`;
@@ -309,7 +328,7 @@ document.getElementById('PLAY').addEventListener('click', ()=>{
         playing = true;
         playButton.style.backgroundImage = `url(icons/pause.png)`;
     }
-});
+}
 
 function playAudio(){
     setTimeout(()=>{
@@ -321,7 +340,7 @@ function playAudio(){
         updateSheet();
         // Shift to the next division
         currentDivision++;
-        if(currentDivision == nbOfDivision) currentDivision = 0;
+        if(currentDivision == nbOfDivisions) currentDivision = 0;
         if(playing) playAudio();
     }, 60000/bpm);
 }

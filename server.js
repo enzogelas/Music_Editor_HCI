@@ -20,6 +20,22 @@ let instruments = 3;
 let sheet = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisions}, ()=>false));
 sheet[0][0] = true;
 
+function resizeSheet(newNbOfDivisions){
+    const newNotes = Array.from({length: instruments}, ()=>Array.from({length: newNbOfDivisions}, ()=>false));
+    for(let i=0; i<Math.min(nbOfDivisions, newNbOfDivisions); i++){
+        for(let j=0; j<instruments; j++){
+            newNotes[j][i] = sheet[j][i];
+        }
+    }
+    for(let i=nbOfDivisions; i<newNbOfDivisions; i++){
+        for(let j=0; j<instruments; j++){
+            newNotes[j][i] = false;
+        }
+    }
+    nbOfDivisions = newNbOfDivisions;
+    sheet = newNotes;
+}
+
 io.on('connection', (socket) => {
     // On connection, add the user to the list of users
     const defaultName = "User " + Math.floor(Math.random()*1000);
@@ -38,7 +54,7 @@ io.on('connection', (socket) => {
     io.emit('update-users', users)
 
     // Send the actual sheet to the new user
-    socket.emit('update-sheet', sheet);
+    socket.emit('update-sheet', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
 
     // DISCONNECTION
     socket.on('disconnect', () => {
@@ -62,40 +78,49 @@ io.on('connection', (socket) => {
 
     // EVENTS FOR CHANGING THE SHEET
     socket.on('update-sheet', (newSheet) => {
+        console.log("Sheet received :", newSheet);
         nbOfDivisions = newSheet.nbOfDivisions;
-        instruments = newSheet.instruments
-        sheet = newSheet.notes;
-        //console.log('Sheet updated:', sheet);
-        socket.broadcast.emit('update-sheet', sheet);
+        instruments = newSheet.instruments;
+        sheet = newSheet.sheet;
+        const sheetToSend = 
+            {nbOfDivisions: nbOfDivisions, 
+            instruments: instruments, 
+            notes: sheet};
+        console.log("Sending sheet :", sheetToSend);
+        socket.broadcast.emit('update-sheet', sheetToSend);
     });
 
     // EVENTS FOR CHANGING THE NUMBER OF DIVISIONS
     socket.on('submit-divisions', (newDivisions) =>{
-        const id = socket.id;
-        usersToConfirm = users.map(user => user.id);
-        usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
-        console.log("Amog the users", users);
-        console.log("User", id, "has submitted", newDivisions);
-        console.log("Users", usersToConfirm, "have to confirm");
-        socket.broadcast.emit('ask-confirmation-divisions', newDivisions);
+        if(users.length > 1) {
+            const id = socket.id;
+            usersToConfirm = users.map(user => user.id);
+            usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
+            console.log("Among the users", users);
+            console.log("User", id, "has submitted", newDivisions);
+            console.log("Users", usersToConfirm, "have to confirm");
+            socket.broadcast.emit('ask-confirmation-divisions', newDivisions);
+        }
     }); 
-    socket.on('confirm-divisions', (newDivisions)=>{
+    socket.on('confirm-divisions', (newNbOfDivisions)=>{
         const id = socket.id;
-        console.log("User", id, "has confirmed", newDivisions);
+        console.log("User", id, "has confirmed", newNbOfDivisions);
         usersToConfirm.splice(usersToConfirm.indexOf(id), 1);
         console.log("Users", usersToConfirm, "have to confirm");
         if(usersToConfirm.length == 0){
             console.log("All users have confirmed");
-            console.log("The new nb of divisions is", newDivisions);
-            nbOfDivisions = newDivisions; 
+            console.log("The new nb of divisions is", newNbOfDivisions);
+            resizeSheet(newNbOfDivisions);
+            console.log("Nb of divisions updated:", nbOfDivisions);
+            console.log("Sheet updated:", sheet);
             io.emit('update-divisions', nbOfDivisions);
+            io.emit('update-sheet', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
         }
     });
     socket.on('infirm-divisions', ()=>{
         io.emit('update-divisions', nbOfDivisions);
-        io.emit('update-sheet', sheet);
+        io.emit('update-sheet', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
     })
-    
 });
 
 
