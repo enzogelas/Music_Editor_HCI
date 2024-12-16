@@ -97,14 +97,14 @@ window.addEventListener('mouseup', (e)=>{
             sheet: notes
         }
         console.log("Gonna share the sheet", sheetToShare);
-        client.emit('update-sheet', sheetToShare);
+        if(nbOfDivisions == globalNbOfDivisions) client.emit('update-sheet', sheetToShare);
     }
 })
 
 function mousePressedOn(x, y){
     if (mode == 'add'){
         notes[y][x] = true;
-    } else {
+    } else if (mode == 'remove'){
         notes[y][x] = false;
     }
 }
@@ -127,14 +127,14 @@ function updateSheet(){
     }
 
     // Draw the vertical line when the audio is playing
-    if(playing){
-        ctx.beginPath();
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 2;
-        ctx.moveTo((currentDivision+0.5)*unitLength, 0);
-        ctx.lineTo((currentDivision+0.5)*unitLength, canvas.height);
-        ctx.stroke();
-    }
+    
+    ctx.beginPath();
+    ctx.strokeStyle = 'lightblue';
+    ctx.lineWidth = 2;
+    ctx.moveTo((currentDivision+0.5)*unitLength, 0);
+    ctx.lineTo((currentDivision+0.5)*unitLength, canvas.height);
+    ctx.stroke();
+    
 
     // Draw the divisions
     ctx.fillStyle = 'darkgray';
@@ -184,18 +184,26 @@ decreaseDivisionsButton.addEventListener('click', ()=>{
 document.getElementById('SUBMIT_DIVISIONS').addEventListener('click', ()=>{
     if(nbOfDivisions == globalNbOfDivisions) alert("The divisions are already set to "+nbOfDivisions);
     else {
+        waitingDivisionsDialog.showModal();
         client.emit('submit-divisions', nbOfDivisions);
     }
     
 })
-
+// Confirmation of divsions dialog
 const confirmDivisionsDialog = document.getElementById('CONFIRM_DIVISIONS_DIALOG');
 const suggestedDivisionsDisplay = document.getElementById('SUGGESTED_DIVISIONS');
 const confirmDivisionsButton = document.getElementById('CONFIRM_DIVISIONS');
 const cancelDivisionsButton = document.getElementById('CANCEL_DIVISIONS');
 
+// Waiting for the confirmation of the other users dialog
+const waitingDivisionsDialog = document.getElementById('WAITING_DIVISIONS_DIALOG');
+const cancelWaitingDivisionsButton = document.getElementById('CANCEL_WAITING_DIVISIONS');
 
 client.on('ask-confirmation-divisions', (newDivisions) =>{
+    if(playing){
+        playing = false;
+        playButton.style.backgroundImage = `url(icons/play.png)`;
+    }
     suggestedDivisions = newDivisions;
     suggestedDivisionsDisplay.textContent = suggestedDivisions;
     confirmDivisionsDialog.showModal();
@@ -203,16 +211,24 @@ client.on('ask-confirmation-divisions', (newDivisions) =>{
 
 confirmDivisionsButton.addEventListener('click', (e)=>{
     client.emit('confirm-divisions', suggestedDivisions);
+    confirmDivisionsDialog.close();
+    waitingDivisionsDialog.showModal();
 })
 
 cancelDivisionsButton.addEventListener('click', (e)=>{
     client.emit('infirm-divisions');
 })
 
+cancelWaitingDivisionsButton.addEventListener('click', (e)=>{
+    client.emit('infirm-divisions');
+    waitingDivisionsDialog.close();
+})
+
 client.on('update-divisions', (newNbOfDivisions) => {
     globalNbOfDivisions = newNbOfDivisions;
     resizeAudios(newNbOfDivisions);
     confirmDivisionsDialog.close();
+    waitingDivisionsDialog.close();
 })
 
 function changeNbOfDivisions(newNbOfDivisions){
@@ -228,6 +244,8 @@ function changeNbOfDivisions(newNbOfDivisions){
         }
     }
     nbOfDivisions = newNbOfDivisions;
+    if(nbOfDivisions != globalNbOfDivisions) divisionsDisplay.style.color = 'red';
+    else divisionsDisplay.style.color = 'black';
     divisionsDisplay.textContent = nbOfDivisions;
     notes = newNotes;
     audios = Array.from({length: instruments}, ()=>Array.from({length: nbOfDivisions}, ()=>new Audio()));
@@ -297,15 +315,21 @@ client.on('update-users', (users) =>{
 ////////////////////
 
 client.on('update-sheet', (newSheet)=>{
+    if(playing) return;
     console.log("New sheet", newSheet);
+    if(newSheet.nbOfDivisions == globalNbOfDivisions) divisionsDisplay.style.color = 'black';
+    else divisionsDisplay.style.color = 'red';
     nbOfDivisions = newSheet.nbOfDivisions;
     divisionsDisplay.textContent = nbOfDivisions;
+    divisionsDisplay.style.color = 'black';
     instruments = newSheet.instruments;
     notes = newSheet.notes;
-    update();
-})
+    update();     
+});
 
 // To play the audio
+//
+//
 const playButton = document.getElementById('PLAY');
 playButton.style.backgroundImage = `url(icons/play.png)`;
 
@@ -317,18 +341,24 @@ window.addEventListener('keydown', (e)=>{
     if(e.key == ' '){
         triggerPlay();
     }
-})
+});
 
 function triggerPlay(){
     if(playing){
         playing = false;
         playButton.style.backgroundImage = `url(icons/play.png)`;
+        client.emit('ask-current-sheet');
     } else {
         playAudio();
         playing = true;
         playButton.style.backgroundImage = `url(icons/pause.png)`;
     }
 }
+
+document.getElementById('RESET').addEventListener('click', ()=>{
+    currentDivision = 0;
+    updateSheet();
+})
 
 function playAudio(){
     setTimeout(()=>{
@@ -344,3 +374,6 @@ function playAudio(){
         if(playing) playAudio();
     }, 60000/bpm);
 }
+//
+//
+////////////////////

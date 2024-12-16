@@ -90,6 +90,14 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('update-sheet', sheetToSend);
     });
 
+    socket.on('ask-current-sheet', () => {
+        const sheetToSend = 
+            {nbOfDivisions: nbOfDivisions, 
+            instruments: instruments, 
+            notes: sheet};
+        socket.emit('update-sheet', sheetToSend);
+    })
+
     // EVENTS FOR CHANGING THE NUMBER OF DIVISIONS
     socket.on('submit-divisions', (newDivisions) =>{
         if(users.length > 1) {
