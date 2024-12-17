@@ -17,6 +17,9 @@ let currentNote = {x:0, y:0}; // Current note being placed
 let mousePressed = false; // True if the mouse is pressed
 let mode = 'add'; // 'add' or 'remove' (for the mouse dragging)
 
+// To display the cursors of the other users
+let cursors = [];
+
 // Variables for playing the audio
 let playingInterval = null;
 let playing = false;
@@ -55,11 +58,15 @@ document.getElementById("BPM_INPUT").addEventListener('input', (e)=>{
 // All mouse events (to modify the sheet)
 canvas.addEventListener('mouseenter', (e)=>{
     mouseIn = true;
+    const x = Math.floor(e.offsetX/unitLength);
+    const y = Math.floor(e.offsetY/unitLength);
+    client.emit('update-cursor', {x: x, y: y});
     updateSheet();
 })
 
 canvas.addEventListener('mouseleave', (e)=>{
     mouseIn = false;
+    client.emit('update-cursor', null);
     updateSheet();
 })
 
@@ -84,6 +91,7 @@ canvas.addEventListener('mousemove', (e)=>{
             update();
             return;
         }
+        client.emit('update-cursor', {x: x, y: y});
         updateSheet();
     } 
 })
@@ -108,6 +116,14 @@ function mousePressedOn(x, y){
         notes[y][x] = false;
     }
 }
+
+client.on('update-cursor', (users) => {
+    cursors = [];
+    for (const user of users){
+        if(user.cursorPosition != null) cursors.push({color: user.color, x: user.cursorPosition.x, y: user.cursorPosition.y});
+    }
+    updateSheet();
+})
 
 // To update the sheet locally
 function updateSheet(){
@@ -151,6 +167,13 @@ function updateSheet(){
                 ctx.drawImage(instrumentsIcons[j], i*unitLength, j*unitLength, unitLength, unitLength);
             }
         }
+    }
+
+    // Draw the cursors of the other users
+    for (const cursor of cursors){
+        ctx.strokeStyle = cursor.color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cursor.x*unitLength, cursor.y*unitLength, unitLength, unitLength);
     }
 }
 // To update the audio locally
@@ -224,11 +247,20 @@ cancelWaitingDivisionsButton.addEventListener('click', (e)=>{
     waitingDivisionsDialog.close();
 })
 
-client.on('update-divisions', (newNbOfDivisions) => {
-    globalNbOfDivisions = newNbOfDivisions;
-    resizeAudios(newNbOfDivisions);
+client.on('update-divisions', (newSheet) => {
+    globalNbOfDivisions = newSheet.nbOfDivisions;
+    resizeAudios(globalNbOfDivisions);
+
+    nbOfDivisions = newSheet.nbOfDivisions;
+    divisionsDisplay.textContent = nbOfDivisions;
+    divisionsDisplay.style.color = 'black';
+    instruments = newSheet.instruments;
+    notes = newSheet.notes;
+
     confirmDivisionsDialog.close();
     waitingDivisionsDialog.close();
+
+    update(); 
 })
 
 function changeNbOfDivisions(newNbOfDivisions){
@@ -321,7 +353,6 @@ client.on('update-sheet', (newSheet)=>{
     else divisionsDisplay.style.color = 'red';
     nbOfDivisions = newSheet.nbOfDivisions;
     divisionsDisplay.textContent = nbOfDivisions;
-    divisionsDisplay.style.color = 'black';
     instruments = newSheet.instruments;
     notes = newSheet.notes;
     update();     

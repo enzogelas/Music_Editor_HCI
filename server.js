@@ -44,7 +44,8 @@ io.on('connection', (socket) => {
         {
             id: socket.id,
             name: defaultName,
-            color: randomColor
+            color: randomColor,
+            cursorPosition: null
         }
     users.push(newUser);
 
@@ -98,6 +99,13 @@ io.on('connection', (socket) => {
         socket.emit('update-sheet', sheetToSend);
     })
 
+    // EVENTS TO UPDATE CURSORS
+    socket.on('update-cursor', (cursorPosition) => {
+        const indexToUpdate = users.map(user => user.id).indexOf(socket.id);
+        users[indexToUpdate].cursorPosition = cursorPosition;
+        io.emit('update-cursor', users);
+    });
+
     // EVENTS FOR CHANGING THE NUMBER OF DIVISIONS
     socket.on('submit-divisions', (newDivisions) =>{
         if(users.length > 1) {
@@ -121,13 +129,11 @@ io.on('connection', (socket) => {
             resizeSheet(newNbOfDivisions);
             console.log("Nb of divisions updated:", nbOfDivisions);
             console.log("Sheet updated:", sheet);
-            io.emit('update-divisions', nbOfDivisions);
-            io.emit('update-sheet', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
+            io.emit('update-divisions', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
         }
     });
     socket.on('infirm-divisions', ()=>{
-        io.emit('update-divisions', nbOfDivisions);
-        io.emit('update-sheet', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
+        io.emit('update-divisions', {nbOfDivisions: nbOfDivisions, instruments: instruments, notes: sheet});
     })
 });
 
